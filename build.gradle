@@ -35,7 +35,7 @@ allprojects {
     group = 'io.ktor'
     version = configuredVersion
 
-    def skipDokka = project.path.contains("ktor-samples") || project == rootProject || project.name in dokkaExcludes
+    def skipDokka = true // project.path.contains("ktor-samples") || project == rootProject || project.name in dokkaExcludes
     def skipUpload = project.path.contains("ktor-samples")
 
     if (!skipDokka) {
@@ -76,17 +76,17 @@ allprojects {
     }
 
     if (!skipDokka) {
-//        dokka {
-//            outputFormat = 'html'
-//            outputDirectory = "$buildDir/kdoc"
-//            reportNotDocumented = false
-//        }
-//
-//        task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
-//            outputFormat = 'javadoc'
-//            outputDirectory = "$buildDir/javadoc"
-//            reportNotDocumented = false
-//        }
+        dokka {
+            outputFormat = 'html'
+            outputDirectory = "$buildDir/kdoc"
+            reportNotDocumented = false
+        }
+
+        task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
+            outputFormat = 'javadoc'
+            outputDirectory = "$buildDir/javadoc"
+            reportNotDocumented = false
+        }
     }
 
     task jarTest(type: Jar, dependsOn: testClasses) {
@@ -129,20 +129,19 @@ allprojects {
         classifier = 'sources'
         from sourceSets.main.allSource
     }
-
-    task javadocJar(type: Jar, dependsOn: 'dokkaJavadoc') {
-        classifier = 'javadoc'
-        from fileTree(new File(project.buildDir, 'javadoc'))
-    }
-
-    task dokkaJar(type: Jar, dependsOn: 'dokka') {
-        classifier = 'kdoc'
-        from fileTree(new File(project.buildDir, 'kdoc'))
-    }
-
     artifacts.archives packageSources
+
     if (!skipDokka) {
+        task javadocJar(type: Jar, dependsOn: 'dokkaJavadoc') {
+            classifier = 'javadoc'
+            from fileTree(new File(project.buildDir, 'javadoc'))
+        }
         artifacts.archives javadocJar
+
+        task dokkaJar(type: Jar, dependsOn: 'dokka') {
+            classifier = 'kdoc'
+            from fileTree(new File(project.buildDir, 'kdoc'))
+        }
         artifacts.archives dokkaJar
     }
 
