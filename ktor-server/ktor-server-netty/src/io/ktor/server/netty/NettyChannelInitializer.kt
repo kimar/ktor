@@ -8,6 +8,7 @@ import io.netty.channel.*
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http.*
 import io.netty.handler.codec.http2.*
+import io.netty.handler.logging.*
 import io.netty.handler.ssl.*
 import io.netty.handler.timeout.*
 import io.netty.util.concurrent.*
@@ -71,6 +72,8 @@ internal class NettyChannelInitializer(private val hostPipeline: HostPipeline,
             } else {
                 configurePipeline(this, ApplicationProtocolNames.HTTP_1_1)
             }
+
+            addLast("log", LoggingHandler())
         }
     }
 

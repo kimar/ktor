@@ -121,7 +121,8 @@ abstract class WebSocketHostSuite<THost : ApplicationHost, TConfiguration : Appl
             inputStream.parseStatus()
             inputStream.parseHeaders()
 
-            for (i in 1..5) {
+            for (i in 1..50) {
+                println("ping $i")
                 val frame = inputStream.readFrame()
                 assertEquals(FrameType.PING, frame.frameType)
                 assertEquals(true, frame.fin)
