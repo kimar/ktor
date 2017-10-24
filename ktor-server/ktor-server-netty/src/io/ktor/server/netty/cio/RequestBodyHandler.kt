@@ -11,9 +11,12 @@ import kotlinx.coroutines.experimental.io.*
 internal class RequestBodyHandler(val context: ChannelHandlerContext,
                                   private val requestQueue: NettyRequestQueue) : ChannelInboundHandlerAdapter() {
     private val queue = Channel<Any>(Channel.UNLIMITED)
+    private object Upgrade
 
     private val job = launch(Unconfined, start = CoroutineStart.LAZY) {
         var current: ByteWriteChannel? = null
+        var upgraded = false
+
         try {
             while (true) {
                 val event = queue.receiveOrNull() ?: break
@@ -25,6 +28,9 @@ internal class RequestBodyHandler(val context: ChannelHandlerContext,
                     if (event is LastHttpContent) {
                         current.close()
                         current = null
+                        if (upgraded) {
+                            queue.close()
+                        }
                     }
                 } else if (event is ByteBuf) {
                     val channel = current ?: throw IllegalStateException("No current channel but received a byte buf")
@@ -32,6 +38,8 @@ internal class RequestBodyHandler(val context: ChannelHandlerContext,
                 } else if (event is ByteWriteChannel) {
                     current?.close()
                     current = event
+                } else if (event is Upgrade) {
+                    upgraded = true
                 }
             }
         } catch (t: Throwable) {
@@ -43,6 +51,12 @@ internal class RequestBodyHandler(val context: ChannelHandlerContext,
             consumeAndReleaseQueue()
             requestQueue.cancel()
         }
+    }
+
+    fun upgrade(): ByteReadChannel {
+        val channel = newChannel()
+        queue.offer(Upgrade)
+        return channel
     }
 
     fun newChannel(): ByteReadChannel {
